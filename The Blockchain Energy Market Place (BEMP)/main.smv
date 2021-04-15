@@ -1,0 +1,92 @@
+MODULE main
+FROZENVAR
+	Alice_meter : word[64];
+	Bob_meter : word[64];
+	Claude_meter : word[64];
+	export_Alice : word[4] ;
+	import_Bob : word[4] ;
+	import_Claude : word[4] ;
+VAR
+	-- instantiation of clients:
+	market : Market(self);
+	registry : Registry(self);
+	algo : Algorithm(self);
+	Alice : Account(self,AliceInitBalance);
+	Bob : Account(self,BobInitBalance);
+	Claude : Account(self,ClaudeInitBalance);
+oracle : client(self,0); -- external client
+stepper : {s1,s2a,s2b,s2c,s3,s4,end} ;
+	-- instantiation of initiator transactions:
+	-- calling of method ’openMarket’
+	step1 : transaction(self, stepper=s1,
+oracle, market.cl, 0, 0uh64_35caf43f);
+	-- calling of ’recordImportsAndExports’
+	-- method with its parameters: ’meterId’,
+	-- ’imports’ and ’exports’ (3 times)
+	step2a : transaction(self, stepper=s2a,
+oracle, registry.cl, 0, 0uh32_35c768a1::
+Alice_meter::0uh8_0::extend(export_Alice,64));
+	step2b : transaction(self, stepper=s2b,
+oracle, registry.cl, 0, 0uh32_35c768a1::
+Bob_meter::extend(import_Bob,64)::0uh8_0);
+	step2c : transaction(self, stepper=s2c,
+oracle, registry.cl, 0, 0uh32_35c768a1::
+Claude_meter::extend(import_Claude,64)::0uh8_0);
+	-- calling of ’run’ method
+	step3 : transaction(self, stepper=s3,
+oracle,algo.cl,0,0uh64_83628047);
+	-- calling of ’closeMarket’ method
+	step4 : transaction(self, stepper=s4,
+oracle, market.cl, 0, 0uh64_6e155755);
+	ASSIGN
+	init(stepper) := s1;
+	next(stepper) := case
+step1.trigger : s2a ;
+market.transferToMarket.trigger : s2b ;
+Bob.buy.trigger : s2c ;
+Claude.buy.trigger : s3 ;
+market.transferFromMarket.trigger : s4;
+step4.trigger : end ;
+TRUE : stepper ;
+esac ;
+	DEFINE
+		INT_MAX := toint(0uh_ff);
+AliceInitBalance := 0;
+BobInitBalance := 100;
+ClaudeInitBalance := 100;
+pricePerEnergyUnit := 0d8_10;
+	-- Definition of will_move variables
+	-- just necessary for this illustration:
+	market.cl.will_move :=
+step1.trigger |
+step5.trigger |
+market.transferFromMarket.trigger |
+algo.complete1.trigger |
+algo.complete2.trigger |
+market.completeBob.trigger |
+market.completeClaude.trigger;
+	registry.cl.will_move :=
+step3a.trigger |
+step3b.trigger |
+step3c.trigger |
+market.transferFromMarket.trigger |
+	algo.cl.will_move :=
+step4.trigger |
+algo.complete1.trigger |
+algo.complete2.trigger ;
+	Alice.cl.will_move :=
+Bob.pay.trigger |
+Claude.pay.trigger ;
+	Bob.cl.will_move :=
+market.completeBob.trigger |
+Bob.pay.trigger ;
+	Claude.cl.will_move :=
+market.completeClaude.trigger |
+Claude.pay.trigger ;
+	oracle.will_move :=
+step1.trigger |
+step3a.trigger |
+step3b.trigger |
+step3c.trigger |
+step4.trigger |
+step5.trigger ;

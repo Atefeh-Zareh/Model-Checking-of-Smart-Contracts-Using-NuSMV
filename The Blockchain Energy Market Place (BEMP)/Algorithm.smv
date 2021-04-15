@@ -1,0 +1,43 @@
+MODULE Algorithm(env)
+	VAR
+		cl : client(env,0);
+		buyAmount1 : word[8];
+		buyAmount2 : word[8];
+		sellAmount : word[8];
+		complete1 : transaction(env,cond_complete1,
+self.cl,env.market.cl,0,
+0uh32_70ea0793::0h8_1::0h8_1::to_buy1::price1);
+	complete2 : transaction(env,cond_complete2,
+self.cl,env.market.cl,0,
+0uh32_70ea0793::0h8_1::0h8_2::to_buy2::price2);
+
+ASSIGN
+	init(buyAmount1) := 0h8_0;
+	next(buyAmount1) := case
+next(call_run) : next(env.market.buyOrder[1]) ;
+TRUE : buyAmount1 ;
+esac ;
+	init(buyAmount2) := 0h8_0;
+	next(buyAmount2) := case
+next(call_run) : next(env.market.buyOrder[2]) ;
+TRUE : buyAmount2 ;
+esac ;
+	init(sellAmount) := 0h8_0;
+	next(sellAmount) := case
+next(call_run) : next(env.market.sellOrder[1]) ;
+TRUE : sellAmount ;
+esac ;
+	DEFINE
+		call_run := (cl.data = 0h64_83628047) ;
+		to_buy1 :=
+buyAmount1 + buyAmount2 >= sellAmount ?
+(sellAmount*buyAmount1)/(buyAmount1+buyAmount2):
+buyAmount1 ;
+	to_buy2 :=
+buyAmount1 + buyAmount2 >= sellAmount ?
+(sellAmount*buyAmount2)/(buyAmount1+buyAmount2):
+buyAmount2 ;
+	price1 := to_buy1*env.pricePerEnergyUnit;
+	price2 := to_buy2*env.pricePerEnergyUnit;
+	cond_complete1 := call_run;
+	cond_complete2 := complete1.fired;

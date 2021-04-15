@@ -1,0 +1,36 @@
+MODULE ETP_Market(env)
+	VAR
+		cl : account(env,0);
+		completeBob : transaction(env,
+cond_completeBob, self.cl, env.Bob.cl,
+0, 0uh40_70ea0793::seller_meter::price);
+	completeClaude : transaction(env,
+cond_completeClaude, self.cl, env.Claude.cl,
+0, 0uh40_70ea0793::seller_meter::price);
+	transferFromMarket : transaction(env,
+cond_transferFrom, self.cl, env.registry.cl,
+0, 0uh40_16c5407d::buyer_meter::amount);
+	DEFINE
+		call_complete := marketOpen &
+(cl.data[63:32] = 0h_70ea0793);
+		seller := call_complete ?
+cl.data[31:24] : 0h8_0;
+	buyer := call_complete ?
+cl.data[23:16] : 0h8_0;
+	amount := call_complete ?
+cl.data[15:8] : 0h8_0;
+	price := call_complete ?
+cl.data[7:0] : 0h8_0;
+	seller_meter := env.Alice_meter;
+	buyer_meter := case
+cond_completeBob.fired : env.Bob_meter;
+cond_completeClaude.fired : env.Claude_meter;
+TRUE : 0h16_0;
+esac;
+	cond_completeBob := call_complete &
+buyer = 0h8_1;
+	cond_completeClaude := call_complete &
+buyer = 0h8_2;
+	cond_transferFrom :=
+env.Bob.payAlice.trigger |
+env.Claude.payAlice.trigger ;

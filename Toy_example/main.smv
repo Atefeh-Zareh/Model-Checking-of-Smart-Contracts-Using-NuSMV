@@ -1,0 +1,17 @@
+MODULE main
+	VAR
+		_b : boolean;
+		toy : Toy_example(self);
+		oracle : client(self,0);
+		tx : transaction(self,_cond, oracle,
+			toy.c,0,foo_selector::word1(_b));
+	ASSIGN init(_b):=FALSE;
+	TRANS tx.fired -> _b=next(_b);
+	
+	DEFINE
+		INT_MAX := 100;
+		oracle.will_move := tx.trigger;
+		toy.c.will_move := tx.trigger;
+		foo_selector := 0h_45557578;
+		_cond := (_b != next(_b));
+SPEC AG (_b -> (toy.a=42));

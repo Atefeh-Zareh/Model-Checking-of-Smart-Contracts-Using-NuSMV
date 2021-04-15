@@ -1,0 +1,17 @@
+MODULE main
+	VAR
+		_amount : 0..INT_MAX;
+		_data : word[64];
+		_cond1 : boolean;
+		_cond2 : boolean;
+		c1 : client(self,10);
+		c2 : client(self,10);
+		tx1 : transaction(self,_cond1 &
+		!_cond2,c1,c2,_amount,_data);
+		tx2 : transaction(self,_cond2 &
+		!_cond1,c2,c1,_amount,_data);
+	DEFINE
+		INT_MAX := 10;
+		c1.will_move := tx1.trigger | tx2.trigger;
+		c2.will_move := tx1.trigger | tx2.trigger;
+SPEC AG (c1.balance + c2.balance = 20);

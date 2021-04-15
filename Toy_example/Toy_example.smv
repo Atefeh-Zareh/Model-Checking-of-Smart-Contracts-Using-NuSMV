@@ -1,0 +1,14 @@
+MODULE Toy_example(env)
+	VAR
+		c: client(env,0);
+		a: 0..env.INT_MAX;
+	ASSIGN
+		init(a) := 0;
+		next(a) := case
+			next(call_foo & b) : 42;
+			next(call_foo & !b) : 0;
+			TRUE : a;
+			esac;
+	DEFINE
+		call_foo := (c.data[32:1]=0h_45557578);
+		b := bool(c.data[0:0]);

@@ -1,0 +1,15 @@
+MODULE Account(env,init_balance)
+	VAR
+		cl : client(env,init_balance);
+		payAlice : transaction(env,cond_payAlice,
+self.cl, env.Alice.cl,_price,0uh64_0);
+
+	DEFINE
+		call_complete:=(cl.data[55:24]=0h_70ea0793);
+		sellerId := call_complete ?
+cl.data[15:0] : 0h16_0;
+	price := call_complete ?
+cl.data[23:16] : 0h8_0;
+	_price := toint(price);
+	cond_payAlice := call_complete &
+(sellerId = env.Alice_meter);

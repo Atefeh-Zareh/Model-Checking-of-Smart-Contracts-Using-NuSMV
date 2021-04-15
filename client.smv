@@ -1,0 +1,11 @@
+MODULE client(env,init_balance)
+	VAR
+		balance : 0..env.INT_MAX;
+		data : word[64];
+	ASSIGN
+		init(balance) := init_balance;
+		init(data) := 0uh64_0;
+	TRANS !will_move -> conserve ;
+	DEFINE
+		conserve := (next(balance) = balance)
+			& (next(data) = 0h64_0);

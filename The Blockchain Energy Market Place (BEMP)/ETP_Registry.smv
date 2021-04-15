@@ -1,0 +1,24 @@
+MODULE ETP_Registry(env)
+	VAR
+		ac : account(env,0);
+		billOfBob : 0..env.INT_MAX;
+		
+		billOfClaude : 0..env.INT_MAX;
+	ASSIGN
+		init(billOfBob) := 0;
+		next(billOfBob) := case
+next((buyer_meter = env.Bob_meter)) &
+(billOfBob + next(_amount) <= env.INT_MAX) :
+billOfBob + next(_amount);
+TRUE : billOfBob;
+esac;
+-- similar assignments here for billOfClaude
+
+	DEFINE
+		call_transferFromMarket :=
+(ac.data[39:8] = 0h_16c5407d);
+	buyer_meter := call_transferFromMarket ?
+ac.data[23:8] : 0h16_0;
+	amount := call_transferFromMarket ?
+ac.data[7:0] : 0h8_0;
+	_amount := toint(amount);

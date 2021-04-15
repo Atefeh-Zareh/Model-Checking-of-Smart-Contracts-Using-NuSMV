@@ -1,0 +1,17 @@
+MODULE transaction(env,cond,snder,rcver,
+					amount,data)
+	VAR fired : boolean;
+	ASSIGN
+		init(fired) := FALSE;
+		next(fired) := case
+			trigger : TRUE;
+			! next(cond) : FALSE;
+			TRUE : fired;
+			esac;
+	TRANS trigger -> (next(snder.data)=0h64_0)
+& (next(snder.balance) = snder.balance-amount)
+& (next(rcver.data) = resize(data,64))
+& (next(rcver.balance) = rcver.balance+amount);
+DEFINE trigger := (!fired & cond
+& (snder.balance >= amount)
+& (env.INT_MAX - amount >= rcver.balance));
